@@ -2,44 +2,44 @@ name: Sincronização de Partituras e MP3
 
 on:
   schedule:
-    # Executa automaticamente todos os dias à meia-noite (00:00 UTC)
     - cron: '0 */6 * * *'
   workflow_dispatch:
-    # Cria um botão no GitHub para poder sincronizar manualmente sempre que quiser
 
 jobs:
   sync-drive:
-    runs-on: ubuntu-latest
+    # Mudámos para a versão estável atual fixa para evitar os avisos do GitHub
+    runs-on: ubuntu-24.04
 
     steps:
     - name: ⤵️ Descarregar código do repositório
       uses: actions/checkout@v4
 
-    - name: 🛠️ Configurar o Rclone
-      uses: AnimMouse/setup-rclone@v1
-      with:
-        disable_base64: true
-        rclone_config: |
-          [gdrive_coro]
-          type = drive
-          scope = drive.readonly
-          service_account_credentials = ${{ secrets.GDRIVE_CREDENTIALS }}
-
-    - name: 📁 Criar pastas de destino no repositório
+    - name: 🛠️ Instalar o Rclone Nativo
       run: |
-        mkdir -p repositorio_site/pdf
-        mkdir -p repositorio_site/mp3
+        sudo apt-get update
+        sudo apt-get install -y rclone
+
+    - name: 📝 Configurar Credenciais em Ficheiro
+      run: |
+        # Transforma o segredo JSON num ficheiro físico temporário para o Rclone ler
+        echo '${{ secrets.GDRIVE_CREDENTIALS }}' > gdrive_key.json
+
+    - name: 📁 Criar estrutura de destino
+      run: mkdir -p repositorio_site
 
     - name: 🔄 Descarregar ficheiros do Google Drive
       run: |
-        # O Rclone vai descarregar o conteúdo mantendo a estrutura exata do seu Drive
-        rclone copy gdrive_coro:${{ secrets.GDRIVE_FOLDER_ID }} ./repositorio_site/ --drive-shared-with-me --verbose
+        # Executa a cópia direta sem depender de pacotes de terceiros desatualizados
+        rclone copyto :drive: ./repositorio_site \
+          --drive-service-account-file=gdrive_key.json \
+          --drive-root-folder-id="${{ secrets.GDRIVE_FOLDER_ID }} \
+          --drive-shared-with-me \
+          --verbose
 
-    - name: 🚀 Atualizar o repositório do GitHub
+    - name: 🚀 Eliminar chave temporária e atualizar o GitHub
       run: |
+        rm -f gdrive_key.json
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
         git add .
-        # Só faz o commit se o robô detetar novas músicas ou alterações
         git diff --quiet && git diff --staged --quiet || (git commit -m "Atualização de repertório: PDFs e MP3 atualizados" && git push origin main)
-
