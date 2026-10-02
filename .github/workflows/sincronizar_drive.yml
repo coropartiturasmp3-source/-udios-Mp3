@@ -1,0 +1,45 @@
+name: Sincronização de Partituras e MP3
+
+on:
+  schedule:
+    # Executa automaticamente todos os dias à meia-noite (00:00 UTC)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Cria um botão no GitHub para poder sincronizar manualmente sempre que quiser
+
+jobs:
+  sync-drive:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: ⤵️ Descarregar código do repositório
+      uses: actions/checkout@v4
+
+    - name: 🛠️ Configurar o Rclone
+      uses: AnimMouse/setup-rclone@v1
+      with:
+        disable_base64: true
+        rclone_config: |
+          [gdrive_coro]
+          type = drive
+          scope = drive.readonly
+          service_account_credentials = ${{ secrets.GDRIVE_CREDENTIALS }}
+
+    - name: 📁 Criar pastas de destino no repositório
+      run: |
+        mkdir -p repositorio_site/pdf
+        mkdir -p repositorio_site/mp3
+
+    - name: 🔄 Descarregar ficheiros do Google Drive
+      run: |
+        # O Rclone vai descarregar o conteúdo mantendo a estrutura exata do seu Drive
+        rclone copy gdrive_coro:${{ secrets.GDRIVE_FOLDER_ID }} ./repositorio_site/ --drive-shared-with-me --verbose
+
+    - name: 🚀 Atualizar o repositório do GitHub
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
+        git add .
+        # Só faz o commit se o robô detetar novas músicas ou alterações
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Atualização de repertório: PDFs e MP3 atualizados" && git push origin main)
+
