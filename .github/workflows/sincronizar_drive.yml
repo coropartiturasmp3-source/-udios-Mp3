@@ -27,7 +27,7 @@ jobs:
 
     - name: 🔄 Descarregar ficheiros do Google Drive
       run: |
-        rclone copyto :drive: ./repositorio_site \
+        rclone sync :drive: ./repositorio_site \
           --drive-service-account-file="gdrive_key.json" \
           --drive-root-folder-id="${{ secrets.GDRIVE_FOLDER_ID }}" \
           --drive-shared-with-me \
