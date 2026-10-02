@@ -7,7 +7,6 @@ on:
 
 jobs:
   sync-drive:
-    # Mudámos para a versão estável atual fixa para evitar os avisos do GitHub
     runs-on: ubuntu-24.04
 
     steps:
@@ -21,7 +20,6 @@ jobs:
 
     - name: 📝 Configurar Credenciais em Ficheiro
       run: |
-        # Transforma o segredo JSON num ficheiro físico temporário para o Rclone ler
         echo '${{ secrets.GDRIVE_CREDENTIALS }}' > gdrive_key.json
 
     - name: 📁 Criar estrutura de destino
@@ -29,10 +27,9 @@ jobs:
 
     - name: 🔄 Descarregar ficheiros do Google Drive
       run: |
-        # Executa a cópia direta sem depender de pacotes de terceiros desatualizados
         rclone copyto :drive: ./repositorio_site \
-          --drive-service-account-file=gdrive_key.json \
-          --drive-root-folder-id="${{ secrets.GDRIVE_FOLDER_ID }} \
+          --drive-service-account-file="gdrive_key.json" \
+          --drive-root-folder-id="${{ secrets.GDRIVE_FOLDER_ID }}" \
           --drive-shared-with-me \
           --verbose
 
