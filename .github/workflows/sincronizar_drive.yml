@@ -3,7 +3,7 @@ name: Sincronização de Partituras e MP3
 on:
   schedule:
     # Executa automaticamente todos os dias à meia-noite (00:00 UTC)
-    - cron: '0 0 * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     # Cria um botão no GitHub para poder sincronizar manualmente sempre que quiser
 
